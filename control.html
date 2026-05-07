@@ -4,224 +4,533 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control — Sistema de Temperaturas</title>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
-  :root {
-    --bg:       #0a0d0f;
-    --surface:  #111518;
-    --border:   #1e2428;
-    --text:     #c8d4db;
-    --muted:    #4a5a63;
-    --green:    #2ecc71;
-    --yellow:   #f39c12;
-    --red:      #e74c3c;
-    --blue:     #3498db;
-    --accent:   #00d4aa;
-  }
+  :root{
+    --bg:#06070a;
+    --surface:#11141b;
+    --surface-2:#171b24;
+    --border:#252b38;
+    --text:#f4f7fb;
+    --muted:#8a96a8;
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+    --accent:#00d4aa;
+    --accent-soft:rgba(0,212,170,.12);
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    padding: 2rem;
+    --red:#ff5c72;
+    --red-soft:rgba(255,92,114,.14);
+
+    --green:#2ecc71;
+    --yellow:#ffbf47;
+    --blue:#4ea8ff;
+
+    --shadow:0 10px 35px rgba(0,0,0,.45);
   }
 
-  /* ── Header ── */
-  header {
-    display: flex;
-    align-items: baseline;
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 1.5rem;
-  }
-  header h1 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: #fff;
-  }
-  header span {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--muted);
+  *{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
   }
 
-  #estado-api {
-    margin-left: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  #dot-api {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: background 0.3s;
-  }
-  #dot-api.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  #dot-api.err { background: var(--red);   box-shadow: 0 0 6px var(--red);   }
-
-  /* ── Secciones ── */
-  section { margin-bottom: 2.5rem; }
-
-  section h2 {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 1rem;
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at top left, rgba(0,212,170,.12), transparent 25%),
+      radial-gradient(circle at top right, rgba(78,168,255,.08), transparent 22%),
+      linear-gradient(180deg,#06070a 0%, #0b0e13 100%);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding:2rem;
   }
 
-  /* ── Grid de equipos ── */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+  .container{
+    max-width:1500px;
+    margin:auto;
   }
 
-  .equipo-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem 1.2rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    transition: border-color 0.2s;
-  }
-  .equipo-card:hover { border-color: #2a3a42; }
-  .equipo-card.activo {
-    border-color: var(--red);
-    box-shadow: 0 0 16px rgba(231,76,60,0.15);
-    animation: pulse-border 1.5s infinite;
+  /* ───────── Header ───────── */
+
+  header{
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    gap:2rem;
+    padding:2rem;
+    margin-bottom:2rem;
+
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:28px;
+    backdrop-filter:blur(14px);
+
+    box-shadow:var(--shadow);
   }
 
-  @keyframes pulse-border {
-    0%, 100% { box-shadow: 0 0 16px rgba(231,76,60,0.15); }
-    50%       { box-shadow: 0 0 28px rgba(231,76,60,0.35); }
+  header::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(120deg,
+        transparent,
+        rgba(255,255,255,.04),
+        transparent);
+    pointer-events:none;
   }
 
-  .equipo-nombre {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #fff;
+  .header-left{
+    display:flex;
+    flex-direction:column;
+    gap:.4rem;
+    z-index:1;
   }
 
-  .equipo-tipo {
-    font-size: 0.68rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+  .eyebrow{
+    font-size:.75rem;
+    text-transform:uppercase;
+    letter-spacing:.18em;
+    color:var(--accent);
+    font-weight:700;
   }
 
-  .badge-evento {
-    display: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.62rem;
-    background: rgba(231,76,60,0.15);
-    color: var(--red);
-    border: 1px solid rgba(231,76,60,0.3);
-    border-radius: 4px;
-    padding: 2px 6px;
-  }
-  .activo .badge-evento { display: inline-block; }
-
-  /* Selector de tipo de evento */
-  select {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    padding: 0.4rem 0.6rem;
-    cursor: pointer;
-    outline: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a5a63'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.6rem center;
-  }
-  select:focus { border-color: var(--accent); }
-
-  /* Sliders */
-  .param-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-  .param-label {
-    display: flex;
-    justify-content: space-between;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--muted);
-  }
-  .param-label span { color: var(--accent); font-weight: 600; }
-
-  input[type=range] {
-    width: 100%;
-    accent-color: var(--accent);
-    cursor: pointer;
+  header h1{
+    font-size:2.4rem;
+    line-height:1;
+    font-weight:800;
+    letter-spacing:-.04em;
   }
 
-  /* Botón disparar */
-  .btn-disparar {
-    width: 100%;
-    background: transparent;
-    border: 1px solid var(--red);
-    color: var(--red);
-    font-family: 'Syne', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 0.55rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, transform 0.1s;
-  }
-  .btn-disparar:hover  { background: var(--red); color: #fff; }
-  .btn-disparar:active { transform: scale(0.97); }
-  .btn-disparar:disabled {
-    border-color: var(--muted);
-    color: var(--muted);
-    cursor: not-allowed;
+  .header-sub{
+    color:var(--muted);
+    font-size:.95rem;
   }
 
-  /* ── Log ── */
-  #log {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem 1.2rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    line-height: 1.8;
-    max-height: 240px;
-    overflow-y: auto;
-    color: var(--muted);
+  #estado-api{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:.8rem;
+    padding:.9rem 1.1rem;
+
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:18px;
+
+    font-family:'JetBrains Mono',monospace;
+    font-size:.78rem;
+
+    z-index:1;
   }
-  #log .log-ok  { color: var(--green); }
-  #log .log-err { color: var(--red);   }
-  #log .log-ts  { color: #2a3a42; margin-right: 0.5rem; }
+
+  #dot-api{
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:#555;
+    transition:.25s;
+  }
+
+  #dot-api.ok{
+    background:var(--green);
+    box-shadow:0 0 14px var(--green);
+  }
+
+  #dot-api.err{
+    background:var(--red);
+    box-shadow:0 0 14px var(--red);
+  }
+
+  /* ───────── Sections ───────── */
+
+  section{
+    margin-bottom:2rem;
+  }
+
+  .section-title{
+    display:flex;
+    align-items:center;
+    gap:.9rem;
+    margin-bottom:1.3rem;
+  }
+
+  .section-title h2{
+    font-size:1.15rem;
+    font-weight:700;
+    letter-spacing:-.02em;
+  }
+
+  .section-line{
+    flex:1;
+    height:1px;
+    background:linear-gradient(to right, rgba(255,255,255,.12), transparent);
+  }
+
+  /* ───────── Grid ───────── */
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+    gap:1.2rem;
+  }
+
+  /* ───────── Cards ───────── */
+
+  .equipo-card{
+    position:relative;
+    overflow:hidden;
+
+    background:
+      linear-gradient(180deg,
+      rgba(255,255,255,.03),
+      rgba(255,255,255,.015));
+
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:24px;
+
+    padding:1.3rem;
+
+    backdrop-filter:blur(14px);
+    box-shadow:var(--shadow);
+
+    display:flex;
+    flex-direction:column;
+    gap:1.2rem;
+
+    transition:
+      transform .2s ease,
+      border-color .2s ease,
+      box-shadow .2s ease;
+  }
+
+  .equipo-card::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(145deg,
+      rgba(255,255,255,.05),
+      transparent 45%);
+    pointer-events:none;
+  }
+
+  .equipo-card:hover{
+    transform:translateY(-4px);
+    border-color:rgba(0,212,170,.25);
+    box-shadow:
+      0 16px 40px rgba(0,0,0,.5),
+      0 0 0 1px rgba(0,212,170,.08);
+  }
+
+  .equipo-card.activo{
+    border-color:rgba(255,92,114,.35);
+    box-shadow:
+      0 18px 45px rgba(0,0,0,.5),
+      0 0 0 1px rgba(255,92,114,.12),
+      0 0 30px rgba(255,92,114,.18);
+    animation:pulse 1.5s infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{
+      box-shadow:
+        0 18px 45px rgba(0,0,0,.5),
+        0 0 0 1px rgba(255,92,114,.12),
+        0 0 30px rgba(255,92,114,.14);
+    }
+
+    50%{
+      box-shadow:
+        0 18px 45px rgba(0,0,0,.5),
+        0 0 0 1px rgba(255,92,114,.2),
+        0 0 50px rgba(255,92,114,.28);
+    }
+  }
+
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:1rem;
+  }
+
+  .equipo-nombre{
+    font-family:'JetBrains Mono',monospace;
+    font-size:1rem;
+    font-weight:700;
+    color:#fff;
+  }
+
+  .equipo-tipo{
+    margin-top:.45rem;
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+
+    padding:.32rem .65rem;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.06);
+
+    font-size:.68rem;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+
+    color:var(--muted);
+  }
+
+  .badge-evento{
+    display:none;
+    align-items:center;
+    gap:.4rem;
+
+    padding:.45rem .75rem;
+
+    border-radius:999px;
+
+    background:var(--red-soft);
+    border:1px solid rgba(255,92,114,.2);
+
+    color:var(--red);
+
+    font-size:.7rem;
+    font-weight:700;
+
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  .activo .badge-evento{
+    display:flex;
+  }
+
+  /* ───────── Select ───────── */
+
+  select{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:14px;
+
+    padding:.95rem 1rem;
+
+    color:var(--text);
+
+    font-family:'Inter',sans-serif;
+    font-size:.9rem;
+    font-weight:500;
+
+    outline:none;
+    cursor:pointer;
+
+    transition:.2s;
+
+    appearance:none;
+
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a96a8' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+
+    background-repeat:no-repeat;
+    background-position:right 1rem center;
+  }
+
+  select:focus{
+    border-color:rgba(0,212,170,.4);
+    box-shadow:0 0 0 4px rgba(0,212,170,.08);
+  }
+
+  /* ───────── Params ───────── */
+
+  .param-row{
+    display:flex;
+    flex-direction:column;
+    gap:.65rem;
+  }
+
+  .param-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    font-size:.8rem;
+    color:var(--muted);
+    font-weight:500;
+  }
+
+  .param-label span{
+    color:var(--accent);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+  }
+
+  input[type=range]{
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:999px;
+
+    background:
+      linear-gradient(to right,
+      rgba(0,212,170,.8),
+      rgba(78,168,255,.8));
+
+    outline:none;
+    cursor:pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb{
+    appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:white;
+    border:3px solid var(--accent);
+    box-shadow:0 2px 10px rgba(0,0,0,.4);
+  }
+
+  /* ───────── Button ───────── */
+
+  .btn-disparar{
+    position:relative;
+    overflow:hidden;
+
+    width:100%;
+    border:none;
+
+    background:
+      linear-gradient(135deg,
+      #00d4aa,
+      #4ea8ff);
+
+    color:#061017;
+
+    padding:1rem;
+
+    border-radius:16px;
+
+    font-size:.82rem;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+
+    cursor:pointer;
+
+    transition:
+      transform .12s ease,
+      box-shadow .2s ease,
+      opacity .2s ease;
+  }
+
+  .btn-disparar:hover{
+    transform:translateY(-1px);
+    box-shadow:
+      0 10px 24px rgba(0,212,170,.22);
+  }
+
+  .btn-disparar:active{
+    transform:scale(.98);
+  }
+
+  .btn-disparar:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  /* ───────── Log ───────── */
+
+  #log{
+    background:
+      linear-gradient(180deg,
+      rgba(255,255,255,.03),
+      rgba(255,255,255,.015));
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:24px;
+
+    padding:1.4rem;
+
+    max-height:300px;
+    overflow-y:auto;
+
+    font-family:'JetBrains Mono',monospace;
+    font-size:.78rem;
+    line-height:1.9;
+
+    box-shadow:var(--shadow);
+  }
+
+  #log::-webkit-scrollbar{
+    width:8px;
+  }
+
+  #log::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,.08);
+    border-radius:999px;
+  }
+
+  #log .log-ok{
+    color:var(--green);
+  }
+
+  #log .log-err{
+    color:var(--red);
+  }
+
+  #log .log-ts{
+    color:#586477;
+    margin-right:.7rem;
+  }
+
+  /* ───────── Responsive ───────── */
+
+  @media(max-width:800px){
+
+    body{
+      padding:1rem;
+    }
+
+    header{
+      flex-direction:column;
+      align-items:flex-start;
+    }
+
+    #estado-api{
+      margin-left:0;
+      width:100%;
+      justify-content:center;
+    }
+
+    header h1{
+      font-size:2rem;
+    }
+
+    .grid{
+      grid-template-columns:1fr;
+    }
+  }
 </style>
 </head>
 <body>
 
+<div class="container">
+
 <header>
-  <h1>Panel de Control</h1>
-  <span>Sistema de Temperaturas — Cafetería</span>
+  <div class="header-left">
+    <div class="eyebrow">Digital Twin Control Center</div>
+    <h1>Panel de Control</h1>
+    <div class="header-sub">
+      Sistema inteligente de monitoreo térmico — Cafetería
+    </div>
+  </div>
+
   <div id="estado-api">
     <div id="dot-api"></div>
     <span id="label-api">comprobando API…</span>
@@ -230,20 +539,34 @@
 
 <!-- ── Cadena Fría ── -->
 <section>
-  <h2>❄ Cadena Fría</h2>
+  <div class="section-title">
+    <h2> Cadena Fría</h2>
+    <div class="section-line"></div>
+  </div>
+
   <div class="grid" id="grid-Cad_Fria"></div>
 </section>
 
 <!-- ── Barras de Servicio ── -->
 <section>
-  <h2>🔥 Barras de Servicio</h2>
+  <div class="section-title">
+    <h2> Barras de Servicio</h2>
+    <div class="section-line"></div>
+  </div>
+
   <div class="grid" id="grid-Bar_Serv"></div>
 </section>
 
 <!-- ── Log ── -->
 <section>
-  <h2>Log de eventos</h2>
-  <div id="log"><span class="log-ts">—</span>Esperando eventos…</div>
+  <div class="section-title">
+    <h2> Log de eventos</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div id="log">
+    <span class="log-ts">—</span>Esperando eventos…
+  </div>
 </section>
 
 <script>
@@ -279,7 +602,7 @@ Object.entries(ZONAS).forEach(([zona, equipos]) => {
         <div class="equipo-nombre">${equipo}</div>
         <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem;">
           <div class="equipo-tipo">${tipoLabel(equipo)}</div>
-          <div class="badge-evento">⚠ EVENTO</div>
+          <div class="badge-evento"> EVENTO</div>
         </div>
       </div>
 
@@ -308,7 +631,7 @@ Object.entries(ZONAS).forEach(([zona, equipos]) => {
       </div>
 
       <button class="btn-disparar" onclick="disparar('${zona}','${equipo}')">
-        ⚡ Disparar evento
+         Disparar evento
       </button>
     `;
     grid.appendChild(card);
@@ -336,7 +659,7 @@ async function disparar(zona, equipo) {
     const data = await res.json();
 
     if (data.ok) {
-      log(`⚡ ${equipo} → ${tipo} | ${duracion} ciclos | intensidad ${intensidad}`, "ok");
+      log(` ${equipo} → ${tipo} | ${duracion} ciclos | intensidad ${intensidad}`, "ok");
       marcarActivo(equipo, duracion);
     } else {
       log(`Error en ${equipo}: ${JSON.stringify(data)}`, "err");
@@ -396,5 +719,7 @@ async function checkAPI() {
 checkAPI();
 setInterval(checkAPI, 10000);
 </script>
+
+</div>
 </body>
 </html>

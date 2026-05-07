@@ -5,3 +5,7 @@ fecha_hora,estado,zona,equipo,alerta,valor_C
 2026-05-07 01:11:49,resolved,Bar_Serv,frio_a,Barra fria A,7.78
 2026-05-07 01:23:38,firing,Bar_Serv,frio_a,Barra fria A log,18.55
 2026-05-07 01:24:38,resolved,Bar_Serv,frio_a,Barra fria A log,6.42
+2026-05-07 02:02:38,firing,Cad_Fria,refrig_a,Refrigerador A log,19.15
+2026-05-07 02:04:38,resolved,Cad_Fria,refrig_a,Refrigerador A log,4.21
+2026-05-07 02:12:32,firing,Cad_Fria,refrig_b,Refrigerador B log,19.07
+2026-05-07 02:15:32,resolved,Cad_Fria,refrig_b,Refrigerador B log,3.94
