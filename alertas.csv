@@ -1,0 +1,7 @@
+fecha_hora,estado,zona,equipo,alerta,valor_C
+2026-05-07 00:22:19,firing,desconocida,desconocido,TestAlert,0.00
+2026-05-07 00:49:41,firing,Cad_Fria,refrig_a,Test,7.50
+2026-05-07 01:11:19,firing,Bar_Serv,frio_a,Barra fria A,18.82
+2026-05-07 01:11:49,resolved,Bar_Serv,frio_a,Barra fria A,7.78
+2026-05-07 01:23:38,firing,Bar_Serv,frio_a,Barra fria A log,18.55
+2026-05-07 01:24:38,resolved,Bar_Serv,frio_a,Barra fria A log,6.42

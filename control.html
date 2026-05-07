@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control — Sistema de Temperaturas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg:       #0a0d0f;
+    --surface:  #111518;
+    --border:   #1e2428;
+    --text:     #c8d4db;
+    --muted:    #4a5a63;
+    --green:    #2ecc71;
+    --yellow:   #f39c12;
+    --red:      #e74c3c;
+    --blue:     #3498db;
+    --accent:   #00d4aa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+  header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  #estado-api {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  #dot-api {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  #dot-api.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  #dot-api.err { background: var(--red);   box-shadow: 0 0 6px var(--red);   }
+
+  /* ── Secciones ── */
+  section { margin-bottom: 2.5rem; }
+
+  section h2 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  /* ── Grid de equipos ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .equipo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: border-color 0.2s;
+  }
+  .equipo-card:hover { border-color: #2a3a42; }
+  .equipo-card.activo {
+    border-color: var(--red);
+    box-shadow: 0 0 16px rgba(231,76,60,0.15);
+    animation: pulse-border 1.5s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 16px rgba(231,76,60,0.15); }
+    50%       { box-shadow: 0 0 28px rgba(231,76,60,0.35); }
+  }
+
+  .equipo-nombre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .equipo-tipo {
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .badge-evento {
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    background: rgba(231,76,60,0.15);
+    color: var(--red);
+    border: 1px solid rgba(231,76,60,0.3);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .activo .badge-evento { display: inline-block; }
+
+  /* Selector de tipo de evento */
+  select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a5a63'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* Sliders */
+  .param-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .param-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .param-label span { color: var(--accent); font-weight: 600; }
+
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Botón disparar */
+  .btn-disparar {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.55rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+  .btn-disparar:hover  { background: var(--red); color: #fff; }
+  .btn-disparar:active { transform: scale(0.97); }
+  .btn-disparar:disabled {
+    border-color: var(--muted);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  /* ── Log ── */
+  #log {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.8;
+    max-height: 240px;
+    overflow-y: auto;
+    color: var(--muted);
+  }
+  #log .log-ok  { color: var(--green); }
+  #log .log-err { color: var(--red);   }
+  #log .log-ts  { color: #2a3a42; margin-right: 0.5rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Panel de Control</h1>
+  <span>Sistema de Temperaturas — Cafetería</span>
+  <div id="estado-api">
+    <div id="dot-api"></div>
+    <span id="label-api">comprobando API…</span>
+  </div>
+</header>
+
+<!-- ── Cadena Fría ── -->
+<section>
+  <h2>❄ Cadena Fría</h2>
+  <div class="grid" id="grid-Cad_Fria"></div>
+</section>
+
+<!-- ── Barras de Servicio ── -->
+<section>
+  <h2>🔥 Barras de Servicio</h2>
+  <div class="grid" id="grid-Bar_Serv"></div>
+</section>
+
+<!-- ── Log ── -->
+<section>
+  <h2>Log de eventos</h2>
+  <div id="log"><span class="log-ts">—</span>Esperando eventos…</div>
+</section>
+
+<script>
+const API = "http://localhost:5050";
+
+const ZONAS = {
+  "Cad_Fria": ["refrig_a", "refrig_b", "cong_a", "cong_b"],
+  "Bar_Serv":  ["cal_a",   "cal_b",   "cal_c",  "frio_a", "frio_b", "frio_c"],
+};
+
+const TIPO_LABEL = {
+  refrig: "Refrigerador",
+  cong:   "Congelador",
+  cal:    "Caliente",
+  frio:   "Frío",
+};
+
+function tipoLabel(equipo) {
+  for (const k in TIPO_LABEL) if (equipo.includes(k)) return TIPO_LABEL[k];
+  return equipo;
+}
+
+// ── Construir tarjetas ──────────────────────
+
+Object.entries(ZONAS).forEach(([zona, equipos]) => {
+  const grid = document.getElementById(`grid-${zona}`);
+  equipos.forEach(equipo => {
+    const card = document.createElement("div");
+    card.className = "equipo-card";
+    card.id = `card-${equipo}`;
+    card.innerHTML = `
+      <div>
+        <div class="equipo-nombre">${equipo}</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem;">
+          <div class="equipo-tipo">${tipoLabel(equipo)}</div>
+          <div class="badge-evento">⚠ EVENTO</div>
+        </div>
+      </div>
+
+      <select id="tipo-${equipo}">
+        <option value="fallo_compresor">Fallo compresor</option>
+        <option value="puerta_abierta">Puerta abierta</option>
+        <option value="sobrecarga">Sobrecarga</option>
+      </select>
+
+      <div class="param-row">
+        <div class="param-label">
+          Duración (ciclos · 5s)
+          <span id="val-dur-${equipo}">10</span>
+        </div>
+        <input type="range" min="3" max="129" value="10" id="dur-${equipo}"
+          oninput="document.getElementById('val-dur-${equipo}').textContent=this.value">
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">
+          Intensidad
+          <span id="val-int-${equipo}">2.5</span>
+        </div>
+        <input type="range" min="1" max="5" step="0.5" value="2.5" id="int-${equipo}"
+          oninput="document.getElementById('val-int-${equipo}').textContent=this.value">
+      </div>
+
+      <button class="btn-disparar" onclick="disparar('${zona}','${equipo}')">
+        ⚡ Disparar evento
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+});
+
+// ── Disparar evento ─────────────────────────
+
+const eventosActivos = {};
+
+async function disparar(zona, equipo) {
+  const tipo      = document.getElementById(`tipo-${equipo}`).value;
+  const duracion  = parseInt(document.getElementById(`dur-${equipo}`).value);
+  const intensidad= parseFloat(document.getElementById(`int-${equipo}`).value);
+
+  const btn = document.querySelector(`#card-${equipo} .btn-disparar`);
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/evento`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ equipo, tipo, duracion, intensidad }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      log(`⚡ ${equipo} → ${tipo} | ${duracion} ciclos | intensidad ${intensidad}`, "ok");
+      marcarActivo(equipo, duracion);
+    } else {
+      log(`Error en ${equipo}: ${JSON.stringify(data)}`, "err");
+      btn.disabled = false;
+    }
+  } catch (e) {
+    log(`No se pudo conectar con la API: ${e.message}`, "err");
+    btn.disabled = false;
+  }
+}
+
+function marcarActivo(equipo, duracion) {
+  const card = document.getElementById(`card-${equipo}`);
+  card.classList.add("activo");
+
+  // Limpiar timer anterior si lo hay
+  if (eventosActivos[equipo]) clearTimeout(eventosActivos[equipo]);
+
+  // Quitar estado activo cuando termine el evento (duracion * 5s + margen)
+  eventosActivos[equipo] = setTimeout(() => {
+    card.classList.remove("activo");
+    const btn = card.querySelector(".btn-disparar");
+    btn.disabled = false;
+    log(`✅ ${equipo} → evento terminado`, "ok");
+    delete eventosActivos[equipo];
+  }, duracion * 5000 + 2000);
+}
+
+// ── Log ─────────────────────────────────────
+
+function log(msg, tipo = "") {
+  const el  = document.getElementById("log");
+  const ts  = new Date().toLocaleTimeString("es-ES");
+  const cls = tipo === "ok" ? "log-ok" : tipo === "err" ? "log-err" : "";
+  el.innerHTML += `<div><span class="log-ts">${ts}</span><span class="${cls}">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Verificar API ────────────────────────────
+
+async function checkAPI() {
+  const dot   = document.getElementById("dot-api");
+  const label = document.getElementById("label-api");
+  try {
+    const r = await fetch(`${API}/ping`, {signal: AbortSignal.timeout(2000)});
+    const d = await r.json();
+    if (d.status === "ok") {
+      dot.className   = "ok";
+      label.textContent = "API conectada";
+    }
+  } catch {
+    dot.className   = "err";
+    label.textContent = "API no disponible";
+  }
+}
+
+checkAPI();
+setInterval(checkAPI, 10000);
+</script>
+</body>
+</html>
